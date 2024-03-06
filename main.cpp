@@ -11,18 +11,30 @@ int rand_float(float min, float max);
 void create_env(RectangleShape &player, RectangleShape &AI, CircleShape &ball);
 bool intersects(CircleShape &c, RectangleShape &p);
 bool contains(CircleShape &c, Vector2f &p);
+void update_score(Text &t, short int score[]);
 
 int main()
 {
     RenderWindow window(VideoMode(WIDTH, HEIGHT), "Pong!");
 
+    short int score[2] = {0, 0};
     bool start = false;
     float speed = 10.0;
     RectangleShape player;
     RectangleShape AI;
     CircleShape ball(15);
     float ball_speed[2] = {-1 / 50.0, 1 / 50.0};
-
+    
+    Font arial;
+    if(!arial.loadFromFile("Arial.ttf"))
+    {
+        cout << "An error occured while loading the font" << endl;
+        return 1;
+    }
+    Text score_text;
+    score_text.setFont(arial);
+    score_text.setString("0:0");
+    score_text.setPosition(WIDTH / 2 - score_text.getLocalBounds().width / 2, 30);
     create_env(player, AI, ball);
 
     while(window.isOpen())
@@ -49,8 +61,22 @@ int main()
         if(start)
         {
             ball.move(Vector2f(ball_speed[0], ball_speed[1]));
-            if(ball.getPosition().x < 0 || ball.getPosition().x > WIDTH)
-                ball_speed[0] *= -1;
+            //if(ball.getPosition().x < 0 || ball.getPosition().x > WIDTH)
+            //    ball_speed[0] *= -1;
+            if(ball.getPosition().x < 0)
+            {
+                ++score[0];
+                update_score(score_text, score);
+                start = false;
+                ball.setPosition(Vector2f(WIDTH / 2 - 15, HEIGHT / 2 - 15));
+            }
+            else if(ball.getPosition().x > WIDTH)
+            {
+                ++score[1];
+                update_score(score_text, score);
+                start = false;
+                ball.setPosition(Vector2f(WIDTH / 2 - 15, HEIGHT / 2 - 15));
+            }
             if(ball.getPosition().y < 0 || ball.getPosition().y > HEIGHT)
                 ball_speed[1] *= -1;
             if(intersects(ball, player) || intersects(ball, AI))
@@ -62,6 +88,7 @@ int main()
         window.draw(player);
         window.draw(AI);
         window.draw(ball);
+        window.draw(score_text);
 
         window.display();
     }
@@ -109,4 +136,11 @@ bool contains(CircleShape &c, Vector2f &p){
     float r = c.getRadius() * c.getRadius();
 
     return (( a + b ) < r);
+}
+
+
+void update_score(Text &t, short int score[2])
+{
+    t.setString(to_string(score[0]) + ":" + to_string(score[1]));
+    t.setPosition(WIDTH / 2 - t.getLocalBounds().width / 2, 30);
 }
