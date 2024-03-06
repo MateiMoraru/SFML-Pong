@@ -23,7 +23,7 @@ int main()
     RectangleShape player;
     RectangleShape AI;
     CircleShape ball(15);
-    float ball_speed[2] = {-1 / 50.0, 1 / 50.0};
+    float ball_speed[2] = {-1 / 100.0, 1 / 100.0};
     
     Font arial;
     if(!arial.loadFromFile("Arial.ttf"))
@@ -48,10 +48,12 @@ int main()
                 switch(event.key.code)
                 {
                     case Keyboard::S:
-                        player.move(Vector2f(0, speed));
+                        if(player.getPosition().y + 50 < HEIGHT)
+                            player.move(Vector2f(0, speed));
                         break;
                     case Keyboard::W:
-                        player.move(Vector2f(0, -speed));
+                        if(player.getPosition().y > -50)
+                            player.move(Vector2f(0, -speed));
                         break;
                     case Keyboard::Space:
                         start = true;
@@ -61,26 +63,36 @@ int main()
         if(start)
         {
             ball.move(Vector2f(ball_speed[0], ball_speed[1]));
-            //if(ball.getPosition().x < 0 || ball.getPosition().x > WIDTH)
-            //    ball_speed[0] *= -1;
+            AI.move(Vector2f(0, ball_speed[1]));
+            if(AI.getPosition().y < -50 || AI.getPosition().y > HEIGHT -50)
+                AI.move(Vector2f(0, -ball_speed[1]));
             if(ball.getPosition().x < 0)
-            {
-                ++score[0];
-                update_score(score_text, score);
-                start = false;
-                ball.setPosition(Vector2f(WIDTH / 2 - 15, HEIGHT / 2 - 15));
-            }
-            else if(ball.getPosition().x > WIDTH)
             {
                 ++score[1];
                 update_score(score_text, score);
                 start = false;
                 ball.setPosition(Vector2f(WIDTH / 2 - 15, HEIGHT / 2 - 15));
             }
+            else if(ball.getPosition().x > WIDTH)
+            {
+                ++score[0];
+                update_score(score_text, score);
+                start = false;
+                ball.setPosition(Vector2f(WIDTH / 2 - 15, HEIGHT / 2 - 15));
+            }
             if(ball.getPosition().y < 0 || ball.getPosition().y > HEIGHT)
                 ball_speed[1] *= -1;
-            if(intersects(ball, player) || intersects(ball, AI))
+            
+            bool p_coll = intersects(ball, player);
+            bool AI_coll = intersects(ball, AI);
+            if(p_coll || AI_coll)
+            {
                 ball_speed[0] *= -1;
+                if(p_coll)
+                    ball.move(Vector2f(5, 0));
+                else
+                    ball.move(Vector2f(-5, 0));
+            }
         }
 
         window.clear();
@@ -102,7 +114,7 @@ void create_env(RectangleShape &player, RectangleShape &AI, CircleShape &ball)
     player.setFillColor(Color(255, 255, 255));
     
     AI.setSize(Vector2f(20, 100));
-    AI.setPosition(Vector2f(WIDTH - 40, HEIGHT / 2 - 50));
+    AI.setPosition(Vector2f(WIDTH - 40, HEIGHT / 2 - 15));
     AI.setFillColor(Color(255, 255, 255));
 
     ball.setFillColor(Color(255, 255, 255));
@@ -120,11 +132,13 @@ bool intersects(CircleShape &c, RectangleShape &r){
     Vector2f topRight(fr.left + fr.width, fr.top);
     Vector2f botLeft(fr.left, fr.top + fr.height);
     Vector2f botRight(fr.left + fr.width, fr.top + fr.height);
+    Vector2f center(fr.left + fr.width / 2, fr.top + fr.height / 2);
 
     return contains(c, topLeft) || 
         contains(c, topRight) || 
         contains(c, botLeft) || 
-        contains(c, botRight);
+        contains(c, botRight) || 
+        contains(c, center);
 }
 
 bool contains(CircleShape &c, Vector2f &p){
